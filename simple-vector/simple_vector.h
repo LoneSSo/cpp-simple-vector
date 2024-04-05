@@ -48,7 +48,7 @@ public:
         : storage_(size)
         , size_(size)
         , capacity_(size) {
-        std::fill(&storage_[0], &storage_[size], value);
+        std::fill(storage_.Get(), &storage_[size], value);
     }
 
     // Создаёт вектор из std::initializer_list
@@ -56,7 +56,7 @@ public:
         : storage_(init.size()) 
         , size_(init.size())
         , capacity_(init.size()) {
-        std::copy(init.begin(), init.end(), &storage_[0]);
+        std::copy(init.begin(), init.end(), storage_.Get());
     }
 
     // Создаёт вектор с заданной вместимостью
@@ -69,7 +69,7 @@ public:
         : storage_(other.size_)
         , size_(other.size_)
         , capacity_(other.size_) {
-        std::copy(other.begin(), other.end(), &storage_[0]);
+        std::copy(other.begin(), other.end(), storage_.Get());
     }
 
     // Перемещающий конструктор
@@ -81,15 +81,19 @@ public:
 
     // Копирующее присваивание
     SimpleVector& operator=(const SimpleVector& rhs) {
-        SimpleVector<Type> tmp(rhs);
-        swap(tmp);
+        if (this != &rhs){
+            SimpleVector<Type> tmp(rhs);
+            swap(tmp);
+        }
         return *this;
     }
 
     // Перемещающее присваивание
     SimpleVector& operator=(SimpleVector&& rhs) {
-        SimpleVector<Type> tmp(std::move(rhs));
-        swap(tmp);
+        if (this != &rhs){
+            SimpleVector<Type> tmp(std::move(rhs));
+            swap(tmp);
+        }
         return *this;
     }
 
@@ -150,7 +154,7 @@ public:
             }
             ArrayPtr<Type> tmp(new_capacity);
 
-            std::move(&storage_[0], &storage_[size_], &tmp[0]);
+            std::move(storage_.Get(), &storage_[size_], tmp.Get());
             FillWithDefault(&tmp[size_], &tmp[new_capacity]);
             
             storage_.swap(tmp);
@@ -173,7 +177,7 @@ public:
     void Reserve(size_t new_capacity){
         if (new_capacity > capacity_){
             ArrayPtr<Type> tmp(new_capacity);
-            std::move(begin(), end(), &tmp[0]);
+            std::move(begin(), end(), tmp.Get());
             storage_.swap(tmp);
             capacity_ = new_capacity;
         }
@@ -182,6 +186,7 @@ public:
     // Основан на механие Insert. Обеспечивает базовую гарантию безопасности.
     // Допустимо ли оставить эту механику, чтобы не дублировать (почти) код? 
     void PushBack(const Type& item) {
+        Insert(end(), item);
         /*
         if(size_ == capacity_){
             size_t new_capacity = capacity_ == 0 ? 1 : capacity_ * 2;
@@ -200,12 +205,12 @@ public:
         tmp[size_] = item;
         storage_.swap(tmp);
         ++size_;
-        */
-       Insert(end(), item);
+        */       
     }
 
     // Перемещающий PushBack
     void PushBack(Type&& item){
+        Insert(end(), std::move(item));
         /*
         if(size_ == capacity_){
             size_t new_capacity = capacity_ == 0 ? 1 : capacity_ * 2;
@@ -224,8 +229,7 @@ public:
         tmp[size_] = std::move(item);
         storage_.swap(tmp);
         ++size_;
-        */
-       Insert(end(), std::move(item));
+        */       
     }
 
     // Вставляет значение value в позицию pos.
@@ -240,7 +244,7 @@ public:
             size_t new_capacity = capacity_ == 0 ? 1 : capacity_ * 2;
             ArrayPtr<Type> tmp(new_capacity);
 
-            std::move(begin(), &storage_[distance], &tmp[0]);
+            std::move(begin(), &storage_[distance], tmp.Get());
             std::exchange(tmp[distance], value);
             std::move(&storage_[distance], end(), &tmp[distance + 1]);
 
@@ -271,7 +275,7 @@ public:
             size_t new_capacity = capacity_ == 0 ? 1 : capacity_ * 2;
             ArrayPtr<Type> tmp(new_capacity);
 
-            std::move(begin(), &storage_[distance], &tmp[0]);
+            std::move(begin(), &storage_[distance], tmp.Get());
             std::exchange(tmp[distance], std::move(value));
             std::move(&storage_[distance], end(), &tmp[distance + 1]);
 
@@ -312,7 +316,7 @@ public:
     // Возвращает итератор на начало массива
     // Для пустого массива может быть равен (или не равен) nullptr
     Iterator begin() noexcept {
-        return &storage_[0];
+        return storage_.Get();
     }
 
     // Возвращает итератор на элемент, следующий за последним
@@ -336,7 +340,7 @@ public:
     // Возвращает константный итератор на начало массива
     // Для пустого массива может быть равен (или не равен) nullptr
     ConstIterator cbegin() const noexcept {
-        return &storage_[0];
+        return storage_.Get();
     }
 
     // Возвращает итератор на элемент, следующий за последним

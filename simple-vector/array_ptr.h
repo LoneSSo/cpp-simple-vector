@@ -10,8 +10,8 @@ public:
 
     // Создаёт в куче массив из size элементов типа Type.
     // Если size == 0, поле raw_ptr_ должно быть равно nullptr
-    explicit ArrayPtr(size_t size) {
-        raw_ptr_ = size !=0 ? new Type[size] : nullptr;
+    explicit ArrayPtr(size_t size) 
+        : raw_ptr_(size != 0 ? new Type[size] : nullptr) {
     }
 
     // Конструктор из сырого указателя, хранящего адрес массива в куче либо nullptr
@@ -22,8 +22,8 @@ public:
     // Запрещаем копирование
     ArrayPtr(const ArrayPtr&) = delete;
 
-    ArrayPtr(ArrayPtr&& arrayptr){
-        raw_ptr_ = std::exchange(arrayptr.raw_ptr_, nullptr);
+    ArrayPtr(ArrayPtr&& array_ptr){
+        raw_ptr_ = std::exchange(array_ptr.raw_ptr_, nullptr);
     }
 
     ~ArrayPtr() {
